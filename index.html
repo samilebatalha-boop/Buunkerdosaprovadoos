@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bunker da Aprovação</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+:root{--vd:#1a2e1a;--vm:#2d5a1e;--vc:#4a8c2a;--vb:#5db832;--ou:#c9a227;--ol:#e8c547;--br:#f0f0e8;--ci:#888f82;--pt:#0a0f0a;--card:#111a11;--border:rgba(255,255,255,0.07);}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:#0d120d;font-family:'Barlow',sans-serif;color:var(--br);overflow-x:hidden;}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:900;background:rgba(10,15,10,0.97);border-bottom:1px solid rgba(93,184,50,0.15);backdrop-filter:blur(12px);display:flex;align-items:center;height:58px;}
+.topbar-logo{display:flex;align-items:center;padding:0 20px;border-right:1px solid var(--border);height:100%;}
+.topbar-logo-text{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--br);}
+.topbar-logo-text span{color:var(--vb);}
+.topbar-nav{display:flex;align-items:center;gap:2px;padding:0 12px;flex:1;overflow-x:auto;}
+.topbar-nav::-webkit-scrollbar{display:none;}
+.tnav-btn{background:none;border:none;cursor:pointer;padding:8px 12px;border-radius:5px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;color:rgba(240,240,232,0.55);transition:all .2s;white-space:nowrap;}
+.tnav-btn:hover{background:rgba(93,184,50,0.1);color:var(--vb);}
+.topbar-actions{display:flex;align-items:center;gap:6px;padding:0 12px;margin-left:auto;}
+.btn-admin{background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.25);border-radius:5px;padding:6px 12px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;color:var(--ou);transition:all .2s;white-space:nowrap;}
+.btn-admin:hover{background:rgba(201,162,39,0.2);}
+.btn-wpp-top{background:#25D366;border:none;border-radius:5px;padding:6px 12px;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.hero{padding:90px 20px 50px;background:linear-gradient(180deg,#0a150a 0%,#0d120d 100%);position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:700px;height:700px;background:radial-gradient(circle,rgba(93,184,50,0.07) 0%,transparent 65%);pointer-events:none;}
+.hero-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 380px;gap:40px;align-items:center;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(93,184,50,0.08);border:1px solid rgba(93,184,50,0.25);border-radius:100px;padding:5px 14px;margin-bottom:16px;}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--vb);box-shadow:0 0 8px var(--vb);animation:pulse 2s infinite;}
+.hero-badge span{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--vb);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(40px,6vw,70px);letter-spacing:3px;line-height:.95;margin-bottom:14px;}
+.hero-title span{color:var(--vb);}
+.hero-sub{font-size:14px;line-height:1.7;color:rgba(240,240,232,0.6);max-width:460px;margin-bottom:24px;}
+.hero-stats{display:flex;gap:24px;margin-bottom:28px;}
+.hstat{text-align:center;}
+.hstat-n{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--vb);line-height:1;}
+.hstat-l{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;color:var(--ci);margin-top:2px;}
+.hstat-div{width:1px;background:rgba(255,255,255,0.08);}
+.hero-btns{display:flex;gap:10px;flex-wrap:wrap;}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--vc),var(--vm));border:2px solid var(--vb);border-radius:6px;padding:12px 24px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;color:var(--br);text-decoration:none;cursor:pointer;box-shadow:0 0 24px rgba(93,184,50,0.2);transition:all .25s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 30px rgba(93,184,50,0.35);}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;background:#25D366;border:none;border-radius:6px;padding:12px 20px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;color:#fff;text-decoration:none;cursor:pointer;transition:all .25s;}
+.btn-secondary:hover{background:#1da851;}
+.hero-card{background:linear-gradient(135deg,rgba(26,46,26,0.9),rgba(10,20,10,0.95));border:1px solid rgba(93,184,50,0.2);border-radius:12px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.hero-card-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--ou);margin-bottom:12px;}
+.hc-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.hc-item:last-child{border-bottom:none;}
+.hc-icon{font-size:16px;width:24px;text-align:center;}
+.hc-text{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;color:rgba(240,240,232,0.8);}
+.hc-badge{margin-left:auto;background:rgba(93,184,50,0.12);border:1px solid rgba(93,184,50,0.25);border-radius:4px;padding:2px 7px;font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;color:var(--vb);}
+.hc-badge.new{background:rgba(201,162,39,0.12);border-color:rgba(201,162,39,0.3);color:var(--ol);}
+.main{max-width:1100px;margin:0 auto;padding:40px 20px 70px;}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--br);}
+.sec-title span{color:var(--vb);}
+.sec-count{font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:2px;color:var(--ci);}
+.filtros{display:flex;gap:6px;margin-bottom:24px;overflow-x:auto;padding-bottom:4px;}
+.filtros::-webkit-scrollbar{display:none;}
+.filtro-btn{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:100px;padding:5px 14px;cursor:pointer;white-space:nowrap;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;color:rgba(240,240,232,0.5);transition:all .2s;}
+.filtro-btn:hover,.filtro-btn.active{background:rgba(93,184,50,0.1);border-color:rgba(93,184,50,0.3);color:var(--vb);}
+.cursos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.curso-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:all .25s;display:flex;flex-direction:column;}
+.curso-card:hover{border-color:rgba(93,184,50,0.3);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.4);}
+.curso-thumb{height:110px;display:flex;align-items:center;justify-content:center;font-size:44px;position:relative;overflow:hidden;}
+.curso-thumb-overlay{position:absolute;inset:0;opacity:0.15;}
+.curso-badges{position:absolute;top:8px;left:8px;display:flex;gap:4px;}
+.cbadge{border-radius:4px;padding:2px 7px;font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;font-weight:700;}
+.cbadge.novo{background:var(--ou);color:#000;}
+.cbadge.gratis{background:var(--vb);color:#000;}
+.cbadge.destaque{background:rgba(93,184,50,0.2);border:1px solid var(--vb);color:var(--vb);}
+.curso-body{padding:16px;flex:1;display:flex;flex-direction:column;}
+.curso-cat{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ou);margin-bottom:5px;}
+.curso-nome{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--br);margin-bottom:5px;line-height:1.1;}
+.curso-desc{font-size:12px;line-height:1.6;color:rgba(240,240,232,0.5);flex:1;margin-bottom:12px;}
+.curso-meta{margin-bottom:12px;}
+.curso-meta-item{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;color:rgba(240,240,232,0.35);}
+.curso-footer{display:flex;align-items:center;justify-content:space-between;}
+.curso-preco{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--vb);}
+.curso-preco-de{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:rgba(240,240,232,0.3);text-decoration:line-through;}
+.btn-comprar{background:linear-gradient(135deg,var(--vc),var(--vm));border:1px solid var(--vb);border-radius:5px;padding:7px 14px;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:var(--br);text-decoration:none;display:inline-block;transition:all .2s;}
+.btn-comprar:hover{box-shadow:0 4px 16px rgba(93,184,50,0.3);}
+.sobre-section{background:linear-gradient(135deg,rgba(26,46,26,0.4),rgba(10,20,10,0.6));border:1px solid rgba(93,184,50,0.12);border-radius:12px;padding:36px;margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center;}
+.sobre-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;margin-bottom:10px;}
+.sobre-title span{color:var(--vb);}
+.sobre-text{font-size:14px;line-height:1.8;color:rgba(240,240,232,0.6);}
+.sobre-itens{display:flex;flex-direction:column;gap:10px;}
+.sobre-item{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;}
+.sobre-item-icon{font-size:20px;width:32px;text-align:center;}
+.sobre-item-text{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;color:rgba(240,240,232,0.8);}
+.sobre-item-sub{font-size:11px;color:rgba(240,240,232,0.35);}
+footer{background:rgba(0,0,0,0.4);border-top:1px solid var(--border);padding:28px 20px;text-align:center;}
+.footer-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:rgba(240,240,232,0.3);}
+.footer-logo span{color:rgba(93,184,50,0.4);}
+.footer-sub{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;color:rgba(240,240,232,0.2);margin-top:5px;}
+.loading-overlay{position:fixed;inset:0;z-index:9999;background:#0a0f0a;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .5s;}
+.loading-overlay.hide{opacity:0;pointer-events:none;}
+.loading-logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--vb);}
+.loading-bar{width:180px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
+.loading-bar-inner{height:100%;background:var(--vb);animation:loadbar 1.2s ease infinite;}
+@keyframes loadbar{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
+.modal-bg{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-bg.open{display:flex;}
+.modal{background:linear-gradient(135deg,#0d1f0d,#0a0f0a);border:1px solid rgba(201,162,39,0.3);border-radius:12px;padding:28px;width:100%;max-width:380px;box-shadow:0 30px 80px rgba(0,0,0,0.7);}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--ou);margin-bottom:5px;}
+.modal-sub{font-size:12px;color:rgba(240,240,232,0.4);margin-bottom:20px;}
+.modal-input{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:11px 13px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--br);margin-bottom:10px;}
+.modal-input:focus{outline:none;border-color:rgba(93,184,50,0.4);}
+.modal-btns{display:flex;gap:8px;}
+.modal-ok{flex:1;background:linear-gradient(135deg,var(--vc),var(--vm));border:1px solid var(--vb);border-radius:6px;padding:10px;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--br);}
+.modal-cancel{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:10px 16px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(240,240,232,0.5);}
+.modal-err{font-size:12px;color:#f87171;margin-bottom:8px;display:none;}
+#admin-panel{position:fixed;inset:0;z-index:8888;background:#080f08;overflow-y:auto;display:none;}
+#admin-panel.open{display:block;}
+.admin-topbar{background:#0d1f0d;border-bottom:2px solid var(--ou);padding:10px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:10;}
+.admin-logo{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;color:var(--vb);}
+.admin-logo span{color:var(--ou);}
+.adm-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:5px;padding:6px 13px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;color:rgba(240,240,232,0.7);transition:all .2s;}
+.adm-btn:hover{background:rgba(93,184,50,0.15);border-color:rgba(93,184,50,0.3);color:var(--vb);}
+.adm-btn.save{background:linear-gradient(135deg,var(--vc),var(--vm));border-color:var(--vb);color:var(--br);}
+.adm-btn.danger{border-color:rgba(220,50,50,0.3);color:#f87171;}
+.adm-status{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;color:rgba(240,240,232,0.3);margin-left:auto;}
+.admin-body{max-width:860px;margin:0 auto;padding:28px 20px 70px;}
+.adm-section{margin-bottom:32px;}
+.adm-section-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:var(--ou);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.adm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.adm-field{margin-bottom:12px;}
+.adm-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(240,240,232,0.4);display:block;margin-bottom:4px;}
+.adm-input,.adm-textarea,.adm-select{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:7px 9px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--br);resize:vertical;}
+.adm-input:focus,.adm-textarea:focus,.adm-select:focus{outline:none;border-color:rgba(93,184,50,0.4);}
+.adm-select option{background:#0d1f0d;}
+.adm-textarea{min-height:65px;line-height:1.6;}
+.adm-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.adm-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;}
+.curso-ed-list{display:flex;flex-direction:column;gap:10px;}
+.curso-ed-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px;}
+.curso-ed-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.curso-ed-nome{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--ol);flex:1;}
+.curso-ed-btns{display:flex;gap:5px;}
+.ced-btn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:3px 9px;cursor:pointer;font-size:11px;color:rgba(240,240,232,0.5);transition:all .2s;}
+.ced-btn:hover{background:rgba(93,184,50,0.1);color:var(--vb);}
+.ced-btn.del{color:#f87171;}
+.ced-btn.del:hover{background:rgba(220,50,50,0.1);}
+.curso-ed-body{display:none;}
+.curso-ed-body.open{display:block;}
+.add-curso-btn{width:100%;background:rgba(93,184,50,0.07);border:1px dashed rgba(93,184,50,0.25);border-radius:6px;padding:9px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;color:rgba(93,184,50,0.6);transition:all .2s;margin-top:7px;}
+.add-curso-btn:hover{background:rgba(93,184,50,0.12);color:var(--vb);}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(26,46,26,0.97);border:1px solid var(--vb);border-radius:6px;padding:9px 18px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;color:var(--vb);z-index:99999;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap;}
+.toast.show{opacity:1;}
+@media(max-width:650px){.hero-inner{grid-template-columns:1fr;}.hero-card{display:none;}.sobre-section{grid-template-columns:1fr;}.adm-row,.adm-row3,.adm-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="loading-logo">BUNKER DA APROVAÇÃO</div>
+  <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+</div>
+
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-text">BUNKER <span>DA APROVAÇÃO</span></div>
+  </div>
+  <nav class="topbar-nav">
+    <button class="tnav-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">Início</button>
+    <button class="tnav-btn" onclick="document.getElementById('cursos-section').scrollIntoView({behavior:'smooth'})">Materiais</button>
+    <button class="tnav-btn" onclick="document.getElementById('sobre-section').scrollIntoView({behavior:'smooth'})">Sobre</button>
+  </nav>
+  <div class="topbar-actions">
+    <a id="btn-wpp-top" href="https://chat.whatsapp.com/DupbKRIfa4yCGvsTqMz1CM" target="_blank" rel="noopener" class="btn-wpp-top">💬 WhatsApp</a>
+    <button class="btn-admin" onclick="openAdminModal()">🔐 Admin</button>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-badge"><div class="dot"></div><span id="pub-badge">Plataforma de Estudos para Concursos</span></div>
+      <h1 class="hero-title" id="pub-hero-title">DOMINE A <span>LEGISLAÇÃO</span><br>PASSE NO CONCURSO</h1>
+      <p class="hero-sub" id="pub-hero-sub">Materiais estratégicos em PDF para você estudar com foco e ser aprovado.</p>
+      <div class="hero-stats">
+        <div class="hstat"><div class="hstat-n" id="pub-s1n">100%</div><div class="hstat-l" id="pub-s1l">Digital</div></div>
+        <div class="hstat-div"></div>
+        <div class="hstat"><div class="hstat-n" id="pub-s2n">⚡</div><div class="hstat-l" id="pub-s2l">Acesso imediato</div></div>
+        <div class="hstat-div"></div>
+        <div class="hstat"><div class="hstat-n" id="pub-s3n">✅</div><div class="hstat-l" id="pub-s3l">Foco no edital</div></div>
+      </div>
+      <div class="hero-btns">
+        <a href="#cursos-section" class="btn-primary" onclick="document.getElementById('cursos-section').scrollIntoView({behavior:'smooth'});return false;">📚 Ver Materiais</a>
+        <a id="btn-wpp-hero" href="https://chat.whatsapp.com/DupbKRIfa4yCGvsTqMz1CM" target="_blank" rel="noopener" class="btn-secondary">💬 Grupo Gratuito</a>
+      </div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-card-title">📦 ÚLTIMOS LANÇAMENTOS</div>
+      <div id="pub-hero-card-items"></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="cursos-section">
+    <div class="sec-head">
+      <div class="sec-title">NOSSOS <span>MATERIAIS</span></div>
+      <div class="sec-count" id="pub-count"></div>
+    </div>
+    <div class="filtros" id="pub-filtros"></div>
+    <div class="cursos-grid" id="pub-cursos"></div>
+  </div>
+  <div class="sobre-section" id="sobre-section">
+    <div>
+      <div class="sobre-title">POR QUE O <span>BUNKER?</span></div>
+      <p class="sobre-text" id="pub-sobre-text">Somos especializados em legislação para concursos públicos.</p>
+    </div>
+    <div class="sobre-itens" id="pub-sobre-itens"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">BUNKER <span>DA APROVAÇÃO</span></div>
+  <div class="footer-sub" id="pub-footer-sub">🔥 Especialista em Legislação para Concursos · @bunkerdaprovacao</div>
+</footer>
+
+<!-- MODAL SENHA -->
+<div class="modal-bg" id="admin-modal">
+  <div class="modal">
+    <div class="modal-title">🔐 ÁREA ADMIN</div>
+    <div class="modal-sub">Digite a senha para acessar o painel.</div>
+    <div class="modal-err" id="modal-err">Senha incorreta.</div>
+    <input class="modal-input" type="password" id="admin-pw" placeholder="Senha..." onkeydown="if(event.key==='Enter')checkPw()">
+    <div class="modal-btns">
+      <button class="modal-ok" onclick="checkPw()">ENTRAR</button>
+      <button class="modal-cancel" onclick="closeAdminModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAINEL ADMIN -->
+<div id="admin-panel">
+  <div class="admin-topbar">
+    <div class="admin-logo">BUNKER <span>ADMIN</span></div>
+    <button class="adm-btn save" onclick="salvar()">💾 Salvar e Publicar</button>
+    <button class="adm-btn" onclick="closeAdmin()">👁️ Ver site</button>
+    <button class="adm-btn danger" onclick="resetar()">↩️ Resetar</button>
+    <div class="adm-status" id="adm-status">painel de edição</div>
+  </div>
+  <div class="admin-body">
+    <div class="adm-section">
+      <div class="adm-section-title">⚙️ CONFIGURAÇÕES GERAIS</div>
+      <div class="adm-grid">
+        <div class="adm-field"><span class="adm-label">Badge do topo</span><input class="adm-input" id="cfg-badge"></div>
+        <div class="adm-field"><span class="adm-label">Link do WhatsApp</span><input class="adm-input" id="cfg-wpp" placeholder="https://chat.whatsapp.com/..."></div>
+      </div>
+      <div class="adm-field"><span class="adm-label">Título principal</span><input class="adm-input" id="cfg-hero-title"></div>
+      <div class="adm-field"><span class="adm-label">Subtítulo</span><textarea class="adm-textarea" id="cfg-hero-sub" rows="2"></textarea></div>
+      <div class="adm-grid">
+        <div class="adm-field"><span class="adm-label">Stat 1 número</span><input class="adm-input" id="cfg-s1n"></div>
+        <div class="adm-field"><span class="adm-label">Stat 1 label</span><input class="adm-input" id="cfg-s1l"></div>
+        <div class="adm-field"><span class="adm-label">Stat 2 número</span><input class="adm-input" id="cfg-s2n"></div>
+        <div class="adm-field"><span class="adm-label">Stat 2 label</span><input class="adm-input" id="cfg-s2l"></div>
+        <div class="adm-field"><span class="adm-label">Stat 3 número</span><input class="adm-input" id="cfg-s3n"></div>
+        <div class="adm-field"><span class="adm-label">Stat 3 label</span><input class="adm-input" id="cfg-s3l"></div>
+      </div>
+    </div>
+    <div class="adm-section">
+      <div class="adm-section-title">ℹ️ SEÇÃO SOBRE</div>
+      <div class="adm-field"><span class="adm-label">Texto sobre</span><textarea class="adm-textarea" id="cfg-sobre" rows="3"></textarea></div>
+      <div class="adm-field"><span class="adm-label">Rodapé</span><input class="adm-input" id="cfg-footer"></div>
+      <div class="adm-field">
+        <span class="adm-label">Diferenciais (um por linha: emoji|Título|subtítulo)</span>
+        <textarea class="adm-textarea" id="cfg-diferenciais" rows="4"></textarea>
+        <small style="color:rgba(240,240,232,0.25);font-size:11px;">Ex: 📚|Resumos Estratégicos|Legislação resumida no que cai</small>
+      </div>
+    </div>
+    <div class="adm-section">
+      <div class="adm-section-title">🔐 ALTERAR SENHA</div>
+      <div class="adm-grid">
+        <div class="adm-field"><span class="adm-label">Nova senha</span><input class="adm-input" type="password" id="cfg-nova-senha"></div>
+        <div class="adm-field"><span class="adm-label">Confirmar</span><input class="adm-input" type="password" id="cfg-conf-senha"></div>
+      </div>
+      <button class="adm-btn" onclick="alterarSenha()">Alterar Senha</button>
+    </div>
+    <div class="adm-section">
+      <div class="adm-section-title">📦 MATERIAIS</div>
+      <div class="curso-ed-list" id="adm-cursos-list"></div>
+      <button class="add-curso-btn" onclick="addCurso()">+ Adicionar Material</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ FIREBASE ══
+const firebaseConfig = {
+  apiKey: "AIzaSyCuHOdSO5cZx6wPv-8TSvS7K2bWlPCb2sc",
+  authDomain: "bunker-da-aprovacao.firebaseapp.com",
+  projectId: "bunker-da-aprovacao",
+  storageBucket: "bunker-da-aprovacao.firebasestorage.app",
+  messagingSenderId: "384925832711",
+  appId: "1:384925832711:web:f5da7687aad34bef723ca2"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const DOC = db.collection("site").doc("config");
+
+// ══ DEFAULT ══
+const DEFAULT = {
+  senha: "bunker2024",
+  badge: "Plataforma de Estudos para Concursos",
+  wpp: "https://chat.whatsapp.com/DupbKRIfa4yCGvsTqMz1CM",
+  heroTitle: "DOMINE A LEGISLAÇÃO\nPASSE NO CONCURSO",
+  heroSub: "Materiais estratégicos em PDF para você estudar com foco e ser aprovado.",
+  s1n:"100%",s1l:"Digital",s2n:"⚡",s2l:"Acesso imediato",s3n:"✅",s3l:"Foco no edital",
+  sobre: "Somos especializados em legislação para concursos públicos. Nosso material transforma leis complexas em resumos visuais e estratégicos.",
+  footer: "🔥 Especialista em Legislação para Concursos · @bunkerdaprovacao",
+  diferenciais: [
+    {icon:"📚",titulo:"Resumos Estratégicos",sub:"Legislação resumida no que cai em prova"},
+    {icon:"🗺️",titulo:"Mapas Mentais",sub:"Visuals para fixar conteúdo rapidamente"},
+    {icon:"⚡",titulo:"Acesso Imediato",sub:"Entrega digital após pagamento"},
+    {icon:"🎯",titulo:"Foco no Edital",sub:"Conteúdo alinhado com os concursos"}
+  ],
+  cursos:[
+    {id:"c1",emoji:"⚖️",cor:"#1a2e1a",nome:"Art. 225 – Meio Ambiente",categoria:"Constitucional",desc:"Caput, parágrafos e biomas protegidos. O mais cobrado em concursos ambientais.",itens:"5 PDFs · Mapa Mental",preco:"R$ 19,99",de:"R$ 49,90",link:"https://pay.kiwify.com.br/XlxzIoe",badge:"destaque",ativo:true},
+    {id:"c2",emoji:"🌿",cor:"#1a2e1a",nome:"Lei de Crimes Ambientais",categoria:"Ambiental",desc:"Lei 9.605/98 com resumo comentado e artigos mais cobrados.",itens:"4 PDFs · Resumo",preco:"R$ 19,99",de:"R$ 49,90",link:"https://pay.kiwify.com.br/XlxzIoe",badge:"novo",ativo:true},
+    {id:"c3",emoji:"🏛️",cor:"#1a2e1a",nome:"Improbidade Administrativa",categoria:"Administrativo",desc:"Lei 8.429/92 atualizada pela Lei 14.230/21. Atos, sanções e prazos.",itens:"6 PDFs · Mapa Mental",preco:"R$ 24,99",de:"R$ 59,90",link:"https://pay.kiwify.com.br/XlxzIoe",badge:"destaque",ativo:true}
+  ]
+};
+
+let S = JSON.parse(JSON.stringify(DEFAULT));
+
+// ══ LOAD ══
+async function loadData(){
+  // timeout de 4 segundos — se Firebase demorar, usa o default
+  const timeout = new Promise(resolve => setTimeout(resolve, 4000));
+  const firebaseLoad = DOC.get().then(snap => {
+    if(snap.exists){
+      S = Object.assign({}, DEFAULT, snap.data());
+      if(!S.cursos||!S.cursos.length) S.cursos = DEFAULT.cursos;
+      if(!S.diferenciais||!S.diferenciais.length) S.diferenciais = DEFAULT.diferenciais;
+    } else {
+      DOC.set(JSON.parse(JSON.stringify(DEFAULT)));
+    }
+  }).catch(e => console.warn('Firebase erro:', e));
+
+  await Promise.race([firebaseLoad, timeout]);
+  renderPublic();
+  document.getElementById('loading').classList.add('hide');
+}
+
+async function salvar(){
+  collectForm();
+  const d = JSON.parse(JSON.stringify(S));
+  d.cursos.forEach(c=>delete c._open);
+  try{
+    await DOC.set(d);
+    S=d;
+    toast('✅ Salvo e publicado para todos!');
+    document.getElementById('adm-status').textContent='✅ publicado';
+    setTimeout(()=>document.getElementById('adm-status').textContent='painel de edição',3000);
+  }catch(e){
+    toast('⚠️ Erro ao salvar.');
+    console.error(e);
+  }
+}
+
+// ══ RENDER ══
+function renderPublic(){
+  document.getElementById('pub-badge').textContent=S.badge;
+  document.getElementById('pub-hero-title').innerHTML=S.heroTitle.replace(/\n/g,'<br>');
+  document.getElementById('pub-hero-sub').textContent=S.heroSub;
+  document.getElementById('pub-s1n').textContent=S.s1n;
+  document.getElementById('pub-s1l').textContent=S.s1l;
+  document.getElementById('pub-s2n').textContent=S.s2n;
+  document.getElementById('pub-s2l').textContent=S.s2l;
+  document.getElementById('pub-s3n').textContent=S.s3n;
+  document.getElementById('pub-s3l').textContent=S.s3l;
+
+  // atualiza links whatsapp
+  const wpp = S.wpp||'https://chat.whatsapp.com/DupbKRIfa4yCGvsTqMz1CM';
+  document.getElementById('btn-wpp-top').href=wpp;
+  document.getElementById('btn-wpp-hero').href=wpp;
+
+  document.getElementById('pub-sobre-text').textContent=S.sobre;
+  document.getElementById('pub-footer-sub').textContent=S.footer;
+
+  document.getElementById('pub-sobre-itens').innerHTML=(S.diferenciais||[]).map(d=>`
+    <div class="sobre-item">
+      <div class="sobre-item-icon">${d.icon}</div>
+      <div><div class="sobre-item-text">${esc(d.titulo)}</div><div class="sobre-item-sub">${esc(d.sub)}</div></div>
+    </div>`).join('');
+
+  const cats=['Todos',...new Set((S.cursos||[]).filter(c=>c.ativo).map(c=>c.categoria))];
+  document.getElementById('pub-filtros').innerHTML=cats.map((c,i)=>`
+    <button class="filtro-btn ${i===0?'active':''}" onclick="filtrar('${c}',this)">${c}</button>`).join('');
+
+  renderCursos('Todos');
+
+  document.getElementById('pub-hero-card-items').innerHTML=(S.cursos||[]).filter(c=>c.ativo).slice(-3).reverse().map(c=>`
+    <div class="hc-item">
+      <div class="hc-icon">${c.emoji}</div>
+      <div class="hc-text">${esc(c.nome)}</div>
+      <div class="hc-badge ${c.badge==='novo'?'new':''}">${c.badge==='novo'?'NOVO':c.badge==='gratis'?'GRÁTIS':'⭐'}</div>
+    </div>`).join('');
+}
+
+function filtrar(cat,btn){
+  document.querySelectorAll('.filtro-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderCursos(cat);
+}
+
+function renderCursos(cat){
+  const lista=(S.cursos||[]).filter(c=>c.ativo&&(cat==='Todos'||c.categoria===cat));
+  document.getElementById('pub-count').textContent=lista.length+' material'+(lista.length!==1?'is':'');
+  document.getElementById('pub-cursos').innerHTML=lista.map(c=>`
+    <div class="curso-card">
+      <div class="curso-thumb" style="background:linear-gradient(135deg,${c.cor},#0a0f0a)">
+        <span style="font-size:44px">${c.emoji}</span>
+        <div class="curso-thumb-overlay" style="background:${c.cor}"></div>
+        <div class="curso-badges">
+          ${c.badge==='novo'?'<span class="cbadge novo">NOVO</span>':''}
+          ${c.badge==='gratis'?'<span class="cbadge gratis">GRÁTIS</span>':''}
+          ${c.badge==='destaque'?'<span class="cbadge destaque">⭐ DESTAQUE</span>':''}
+        </div>
+      </div>
+      <div class="curso-body">
+        <div class="curso-cat">${esc(c.categoria)}</div>
+        <div class="curso-nome">${esc(c.nome)}</div>
+        <div class="curso-desc">${esc(c.desc)}</div>
+        <div class="curso-meta"><div class="curso-meta-item">📄 ${esc(c.itens)}</div></div>
+        <div class="curso-footer">
+          <div>${c.de?`<div class="curso-preco-de">${esc(c.de)}</div>`:''}<div class="curso-preco">${esc(c.preco)}</div></div>
+          <a href="${esc(c.link)}" class="btn-comprar" target="_blank" rel="noopener">COMPRAR</a>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ══ ADMIN ══
+function openAdminModal(){document.getElementById('admin-modal').classList.add('open');setTimeout(()=>document.getElementById('admin-pw').focus(),100);}
+function closeAdminModal(){document.getElementById('admin-modal').classList.remove('open');document.getElementById('admin-pw').value='';document.getElementById('modal-err').style.display='none';}
+function checkPw(){
+  if(document.getElementById('admin-pw').value===S.senha){closeAdminModal();openAdmin();}
+  else{document.getElementById('modal-err').style.display='block';document.getElementById('admin-pw').value='';}
+}
+function openAdmin(){document.getElementById('admin-panel').classList.add('open');fillAdminForm();}
+function closeAdmin(){document.getElementById('admin-panel').classList.remove('open');renderPublic();}
+
+function fillAdminForm(){
+  document.getElementById('cfg-badge').value=S.badge;
+  document.getElementById('cfg-wpp').value=S.wpp;
+  document.getElementById('cfg-hero-title').value=S.heroTitle;
+  document.getElementById('cfg-hero-sub').value=S.heroSub;
+  document.getElementById('cfg-s1n').value=S.s1n;
+  document.getElementById('cfg-s1l').value=S.s1l;
+  document.getElementById('cfg-s2n').value=S.s2n;
+  document.getElementById('cfg-s2l').value=S.s2l;
+  document.getElementById('cfg-s3n').value=S.s3n;
+  document.getElementById('cfg-s3l').value=S.s3l;
+  document.getElementById('cfg-sobre').value=S.sobre;
+  document.getElementById('cfg-footer').value=S.footer;
+  document.getElementById('cfg-diferenciais').value=(S.diferenciais||[]).map(d=>`${d.icon}|${d.titulo}|${d.sub}`).join('\n');
+  renderCursosAdmin();
+}
+
+function collectForm(){
+  S.badge=document.getElementById('cfg-badge').value;
+  S.wpp=document.getElementById('cfg-wpp').value;
+  S.heroTitle=document.getElementById('cfg-hero-title').value;
+  S.heroSub=document.getElementById('cfg-hero-sub').value;
+  S.s1n=document.getElementById('cfg-s1n').value;
+  S.s1l=document.getElementById('cfg-s1l').value;
+  S.s2n=document.getElementById('cfg-s2n').value;
+  S.s2l=document.getElementById('cfg-s2l').value;
+  S.s3n=document.getElementById('cfg-s3n').value;
+  S.s3l=document.getElementById('cfg-s3l').value;
+  S.sobre=document.getElementById('cfg-sobre').value;
+  S.footer=document.getElementById('cfg-footer').value;
+  S.diferenciais=document.getElementById('cfg-diferenciais').value.split('\n').filter(l=>l.trim()).map(l=>{const p=l.split('|');return{icon:p[0]||'📌',titulo:p[1]||'',sub:p[2]||''};});
+}
+
+function renderCursosAdmin(){
+  document.getElementById('adm-cursos-list').innerHTML=(S.cursos||[]).map((c)=>`
+    <div class="curso-ed-card" id="ced-${c.id}">
+      <div class="curso-ed-header">
+        <span style="font-size:18px">${c.emoji}</span>
+        <div class="curso-ed-nome">${esc(c.nome)}</div>
+        <div class="curso-ed-btns">
+          <button class="ced-btn" onclick="toggleCed('${c.id}')">${c._open?'▲':'▼ Editar'}</button>
+          <button class="ced-btn del" onclick="removeCurso('${c.id}')">✕</button>
+        </div>
+      </div>
+      <div class="curso-ed-body ${c._open?'open':''}" id="cedb-${c.id}">
+        <div class="adm-row">
+          <div class="adm-field"><span class="adm-label">Emoji</span><input class="adm-input" value="${esc(c.emoji)}" oninput="updC('${c.id}','emoji',this.value)"></div>
+          <div class="adm-field"><span class="adm-label">Categoria</span><input class="adm-input" value="${esc(c.categoria)}" oninput="updC('${c.id}','categoria',this.value)"></div>
+        </div>
+        <div class="adm-field"><span class="adm-label">Nome</span><input class="adm-input" value="${esc(c.nome)}" oninput="updC('${c.id}','nome',this.value)"></div>
+        <div class="adm-field"><span class="adm-label">Descrição</span><textarea class="adm-textarea" rows="2" oninput="updC('${c.id}','desc',this.value)">${esc(c.desc)}</textarea></div>
+        <div class="adm-row3">
+          <div class="adm-field"><span class="adm-label">Preço</span><input class="adm-input" value="${esc(c.preco)}" oninput="updC('${c.id}','preco',this.value)"></div>
+          <div class="adm-field"><span class="adm-label">De (riscado)</span><input class="adm-input" value="${esc(c.de)}" oninput="updC('${c.id}','de',this.value)"></div>
+          <div class="adm-field"><span class="adm-label">Badge</span>
+            <select class="adm-select" onchange="updC('${c.id}','badge',this.value)">
+              <option value="" ${!c.badge?'selected':''}>Nenhum</option>
+              <option value="novo" ${c.badge==='novo'?'selected':''}>NOVO</option>
+              <option value="destaque" ${c.badge==='destaque'?'selected':''}>DESTAQUE</option>
+              <option value="gratis" ${c.badge==='gratis'?'selected':''}>GRÁTIS</option>
+            </select>
+          </div>
+        </div>
+        <div class="adm-field"><span class="adm-label">Itens inclusos</span><input class="adm-input" value="${esc(c.itens)}" oninput="updC('${c.id}','itens',this.value)"></div>
+        <div class="adm-field"><span class="adm-label">Link Kiwify</span><input class="adm-input" value="${esc(c.link)}" oninput="updC('${c.id}','link',this.value)"></div>
+        <div class="adm-field">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" ${c.ativo?'checked':''} onchange="updC('${c.id}','ativo',this.checked)" style="accent-color:var(--vb);width:15px;height:15px;">
+            <span class="adm-label" style="margin:0">Visível no site</span>
+          </label>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleCed(id){const c=S.cursos.find(x=>x.id===id);if(c){c._open=!c._open;renderCursosAdmin();}}
+function updC(id,f,v){const c=S.cursos.find(x=>x.id===id);if(c)c[f]=v;}
+function addCurso(){S.cursos.push({id:'c'+Date.now(),emoji:'📄',cor:'#1a2e1a',nome:'Novo Material',categoria:'Geral',desc:'Descrição do material.',itens:'PDF',preco:'R$ 19,99',de:'',link:'https://pay.kiwify.com.br/',badge:'novo',ativo:true,_open:true});renderCursosAdmin();toast('✅ Material adicionado!');}
+function removeCurso(id){if(!confirm('Remover este material?'))return;S.cursos=S.cursos.filter(c=>c.id!==id);renderCursosAdmin();}
+function alterarSenha(){const n=document.getElementById('cfg-nova-senha').value,c=document.getElementById('cfg-conf-senha').value;if(!n){toast('Digite a nova senha.');return;}if(n!==c){toast('As senhas não coincidem!');return;}S.senha=n;document.getElementById('cfg-nova-senha').value='';document.getElementById('cfg-conf-senha').value='';toast('✅ Senha alterada! Clique em Salvar.');}
+function resetar(){if(!confirm('Resetar tudo para o padrão?'))return;S=JSON.parse(JSON.stringify(DEFAULT));fillAdminForm();toast('↩️ Resetado!');}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+loadData();
+</script>
+</body>
+</html>
